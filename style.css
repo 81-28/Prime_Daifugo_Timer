@@ -6,6 +6,7 @@
 
 body {
     background-color: var(--backgroundColor);
+    touch-action: manipulation;
 }
 
 header{

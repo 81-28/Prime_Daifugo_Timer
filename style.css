@@ -23,20 +23,15 @@ header div{
     margin: auto;
 }
 
-main{
-    display: flex;
-}
-main div{
+main .settings{
     padding: 1em;
-}
-.settings p{
-    display: block;
 }
 main input{
     width: 4em;
 }
 #display{
     font-size: var(--timerSize);
+    text-align: center;
     border-radius: 1em;
     border: 1px solid var(--borderColor);
 }

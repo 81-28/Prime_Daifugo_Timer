@@ -6,27 +6,47 @@ const SOUND_END_DURATION = 300;
 const TIMER_DISPLAY_ID = "display";
 const DURATION_INPUT_ID = "duration";
 const TIMER_SIZE_INPUT_ID = "timerSize";
+const FADE_TIME = 0.002; // フェードイン・アウト時間（秒）
+const TIMER_REFRESH_INTERVAL = (1 / 60) * 1000; // 60FPS相当
 
-// フレーム時間の定義（60FPSを想定）
-const frameTime = (1 / 60) * 1000;
-
-// オーディオ関連の管理クラス
+// オーディオ管理クラス
 class AudioManager {
     constructor() {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.oscillator = null;
+        this.gainNode = null;
         this.soundTimer = null;
     }
     startSound(frequency) {
         this.stopSound();
         this.oscillator = this.audioContext.createOscillator();
+        this.gainNode = this.audioContext.createGain();
         this.oscillator.type = 'sine';
         this.oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
-        this.oscillator.connect(this.audioContext.destination);
+        this.oscillator.connect(this.gainNode);
+        this.gainNode.connect(this.audioContext.destination);
+        // フェードイン
+        const now = this.audioContext.currentTime;
+        this.gainNode.gain.setValueAtTime(0, now);
+        this.gainNode.gain.linearRampToValueAtTime(1, now + FADE_TIME);
         this.oscillator.start();
     }
     stopSound() {
-        if (this.oscillator) {
+        if (this.oscillator && this.gainNode) {
+            const now = this.audioContext.currentTime;
+            this.gainNode.gain.cancelScheduledValues(now);
+            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+            this.gainNode.gain.linearRampToValueAtTime(0, now + FADE_TIME);
+            setTimeout(() => {
+                if (this.oscillator) {
+                    this.oscillator.stop();
+                    this.oscillator.disconnect();
+                    this.gainNode.disconnect();
+                    this.oscillator = null;
+                    this.gainNode = null;
+                }
+            }, FADE_TIME * 1000 + 5); // 少し余裕を持たせて停止
+        } else if (this.oscillator) {
             this.oscillator.stop();
             this.oscillator.disconnect();
             this.oscillator = null;
@@ -43,7 +63,7 @@ class AudioManager {
 
 const audioManager = new AudioManager();
 
-// タイマーと状態管理クラス
+// タイマー管理クラス
 class TimerManager {
     constructor() {
         this.baseTime = Date.now();
@@ -80,24 +100,28 @@ class TimerManager {
     }
 }
 
+const timerManager = new TimerManager();
+
 // UI管理クラス
 class UIManager {
-    static timerDisplay = document.getElementById(TIMER_DISPLAY_ID);
-    static timerSizeInput = document.getElementById(TIMER_SIZE_INPUT_ID);
+    static init() {
+        this.timerDisplay = document.getElementById(TIMER_DISPLAY_ID);
+        this.timerSizeInput = document.getElementById(TIMER_SIZE_INPUT_ID);
+    }
     static updateDisplay(timeMs) {
-        if (UIManager.timerDisplay) {
-            UIManager.timerDisplay.innerHTML = (timeMs / 1000).toFixed(2);
+        if (this.timerDisplay) {
+            this.timerDisplay.innerHTML = (timeMs / 1000).toFixed(2);
         }
     }
     static changeTimerSize() {
-        const timerSize = Number(UIManager.timerSizeInput.value);
+        const timerSize = Number(this.timerSizeInput.value);
         if (!isNaN(timerSize)) {
             document.documentElement.style.setProperty('--timerSize', `${timerSize}em`);
         }
     }
 }
 
-const timerManager = new TimerManager();
+UIManager.init();
 
 // イベントリスナー
 function handleKeyDown(event) {
@@ -115,17 +139,16 @@ function handleKeyUp(event) {
 }
 
 // イベント登録
-UIManager.timerSizeInput.addEventListener("change", UIManager.changeTimerSize);
+UIManager.timerSizeInput.addEventListener("change", () => UIManager.changeTimerSize());
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
+
 // クリックでタイマー開始
-const displayElem = document.getElementById("display");
+const displayElem = document.getElementById(TIMER_DISPLAY_ID);
 if (displayElem) {
-    displayElem.addEventListener("click", () => {
-        timerManager.start();
-    });
+    displayElem.addEventListener("click", () => timerManager.start());
 }
 
-// 一定時間毎に関数を実行
-setInterval(() => timerManager.refresh(), frameTime);
+// 一定時間毎にタイマー更新
+setInterval(() => timerManager.refresh(), TIMER_REFRESH_INTERVAL);
 timerManager.refresh();

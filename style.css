@@ -1,13 +1,16 @@
 :root {
+    --backgroundColor: #efefef;
+    --borderColor:#1f1f1f;
     --timerSize: 4em;
 }
 
 body {
-    background-color: #efefef;
+    background-color: var(--backgroundColor);
 }
 
 header{
     display: flex;
+    border-bottom: 1px solid var(--borderColor);
 }
 header div{
     padding: 0.5em;
@@ -21,7 +24,6 @@ header div{
 
 main{
     display: flex;
-    border-top: 1px solid #1f1f1f;
 }
 main div{
     padding: 1em;
@@ -32,6 +34,8 @@ main div{
 main input{
     width: 4em;
 }
-.display{
+#display{
     font-size: var(--timerSize);
+    border-radius: 1em;
+    border: 1px solid var(--borderColor);
 }

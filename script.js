@@ -118,6 +118,13 @@ function handleKeyUp(event) {
 UIManager.timerSizeInput.addEventListener("change", UIManager.changeTimerSize);
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
+// クリックでタイマー開始
+const displayElem = document.getElementById("display");
+if (displayElem) {
+    displayElem.addEventListener("click", () => {
+        timerManager.start();
+    });
+}
 
 // 一定時間毎に関数を実行
 setInterval(() => timerManager.refresh(), frameTime);

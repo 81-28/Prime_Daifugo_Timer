@@ -32,6 +32,6 @@ main input{
 #display{
     font-size: var(--timerSize);
     text-align: center;
-    border-radius: 1em;
+    border-radius: 0.2em;
     border: 1px solid var(--borderColor);
 }

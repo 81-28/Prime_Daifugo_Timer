@@ -3,7 +3,7 @@ const SOUND_START_FREQ = 600;
 const SOUND_START_DURATION = 100;
 const SOUND_END_FREQ = 800;
 const SOUND_END_DURATION = 300;
-const TIMER_DISPLAY_ID = "timer_display";
+const TIMER_DISPLAY_ID = "display";
 const DURATION_INPUT_ID = "duration";
 const TIMER_SIZE_INPUT_ID = "timerSize";
 

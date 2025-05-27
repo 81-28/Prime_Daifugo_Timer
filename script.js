@@ -1,3 +1,12 @@
+// 定数定義
+const SOUND_START_FREQ = 600;
+const SOUND_START_DURATION = 100;
+const SOUND_END_FREQ = 800;
+const SOUND_END_DURATION = 300;
+const TIMER_DISPLAY_ID = "timer_display";
+const DURATION_INPUT_ID = "duration";
+const TIMER_SIZE_INPUT_ID = "timerSize";
+
 // 時間関連
 let baseTime = new Date().getTime();
 let nowTime = new Date().getTime();
@@ -10,101 +19,116 @@ const frameTime = (1 / 60) * 1000;
 // ボタン状態
 let isSpace = false;
 let timerRunning = false;
-// オーディオコンテキストの作成
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-let oscillator; // オシレーターを格納するための変数
-let soundTimer;
 
-// 音を鳴らし始める関数
-function startSound(frequency) {
-  // オシレーターを作成
-  oscillator = audioContext.createOscillator();
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-  // 出力に接続
-  oscillator.connect(audioContext.destination);
-  // 音を再生
-  oscillator.start();
-}
-// 音を停止する関数
-function stopSound() {
-  if (oscillator) {
-    // オシレーターを停止
-    oscillator.stop();
-  }
-}
-// 音を鳴らす関数
-function playSound(frequency,times) {
-    if (oscillator) stopSound();
-    startSound(frequency);
-    clearTimeout(soundTimer);
-    soundTimer = setTimeout(() => {
-        stopSound();
-    }, times);
-}
-
-// タイマーの時間を変更する関数
-function changeDuration() {
-    const durationSecond = document.getElementById("duration").value;
-    timer = durationSecond * 1000;
-}
-function changeTimerSize() {
-    const timerSize = document.getElementById("timerSize").value;
-    document.documentElement.style.setProperty('--timerSize', `${timerSize}em`);
-}
-
-// 描画する関数
-function draw(){
-    timer_display.innerHTML = displayTime / 1000;
-}
-// スタートする関数
-function timer_start(){
-    changeDuration();
-    baseTime = new Date().getTime();
-    timerRunning = true;
-    playSound(600,100);
-}
-
-// タイマーが終了した時に実行する関数
-function timer_end(){
-    playSound(800,300);
-    timerRunning = false;
-}
-
-// 毎フレーム実行する関数
-function frame_refresh(){
-    nowTime = new Date().getTime();
-    displayTime = timer + baseTime - nowTime;
-    if (displayTime < 0) {
-        displayTime = 0;
-        if (timerRunning) {
-            timer_end();
+// オーディオ関連の管理クラス
+class AudioManager {
+    constructor() {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.oscillator = null;
+        this.soundTimer = null;
+    }
+    startSound(frequency) {
+        this.stopSound();
+        this.oscillator = this.audioContext.createOscillator();
+        this.oscillator.type = 'sine';
+        this.oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+        this.oscillator.connect(this.audioContext.destination);
+        this.oscillator.start();
+    }
+    stopSound() {
+        if (this.oscillator) {
+            this.oscillator.stop();
+            this.oscillator.disconnect();
+            this.oscillator = null;
         }
     }
-    draw();
+    playSound(frequency, duration) {
+        this.startSound(frequency);
+        clearTimeout(this.soundTimer);
+        this.soundTimer = setTimeout(() => {
+            this.stopSound();
+        }, duration);
+    }
 }
 
-// キーを押したときのイベント
-document.addEventListener('keydown', (event) => {
-    // Spaceを押した時のイベント
-    if (event.code === 'Space') {
-        if (!isSpace) {
-            timer_start();
-        }
-        isSpace = true;
-    }
-});
-// キーを離したときのイベント
-document.addEventListener('keyup', (event) => {
-    // Spaceを離した瞬間のイベント
-    if (event.code === 'Space') {
-        isSpace = false;
-    }
-});
+const audioManager = new AudioManager();
 
-// フォントサイズの変更イベント
-document.getElementById("timerSize").addEventListener("change", changeTimerSize);
+// タイマーと状態管理クラス
+class TimerManager {
+    constructor() {
+        this.baseTime = Date.now();
+        this.nowTime = Date.now();
+        this.timer = 0;
+        this.displayTime = 0;
+        this.isSpace = false;
+        this.timerRunning = false;
+    }
+    changeDuration() {
+        const durationSecond = Number(document.getElementById(DURATION_INPUT_ID).value);
+        this.timer = isNaN(durationSecond) ? 0 : durationSecond * 1000;
+    }
+    start() {
+        this.changeDuration();
+        this.baseTime = Date.now();
+        this.timerRunning = true;
+        audioManager.playSound(SOUND_START_FREQ, SOUND_START_DURATION);
+    }
+    end() {
+        audioManager.playSound(SOUND_END_FREQ, SOUND_END_DURATION);
+        this.timerRunning = false;
+    }
+    refresh() {
+        this.nowTime = Date.now();
+        this.displayTime = this.timer + this.baseTime - this.nowTime;
+        if (this.displayTime < 0) {
+            this.displayTime = 0;
+            if (this.timerRunning) {
+                this.end();
+            }
+        }
+        UIManager.updateDisplay(this.displayTime);
+    }
+}
+
+// UI管理クラス
+class UIManager {
+    static timerDisplay = document.getElementById(TIMER_DISPLAY_ID);
+    static timerSizeInput = document.getElementById(TIMER_SIZE_INPUT_ID);
+    static updateDisplay(timeMs) {
+        if (UIManager.timerDisplay) {
+            UIManager.timerDisplay.innerHTML = (timeMs / 1000).toFixed(2);
+        }
+    }
+    static changeTimerSize() {
+        const timerSize = Number(UIManager.timerSizeInput.value);
+        if (!isNaN(timerSize)) {
+            document.documentElement.style.setProperty('--timerSize', `${timerSize}em`);
+        }
+    }
+}
+
+const timerManager = new TimerManager();
+
+// イベントリスナー
+function handleKeyDown(event) {
+    if (event.code === 'Space') {
+        if (!timerManager.isSpace) {
+            timerManager.start();
+        }
+        timerManager.isSpace = true;
+    }
+}
+function handleKeyUp(event) {
+    if (event.code === 'Space') {
+        timerManager.isSpace = false;
+    }
+}
+
+// イベント登録
+UIManager.timerSizeInput.addEventListener("change", UIManager.changeTimerSize);
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
 
 // 一定時間毎に関数を実行
-setInterval(frame_refresh, frameTime);
-frame_refresh();
+setInterval(() => timerManager.refresh(), frameTime);
+timerManager.refresh();

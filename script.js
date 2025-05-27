@@ -7,18 +7,8 @@ const TIMER_DISPLAY_ID = "timer_display";
 const DURATION_INPUT_ID = "duration";
 const TIMER_SIZE_INPUT_ID = "timerSize";
 
-// 時間関連
-let baseTime = new Date().getTime();
-let nowTime = new Date().getTime();
-// 残り時間(ミリ秒)
-let timer=0;
-// 表示する時間
-let displayTime = 0;
-// 画面更新
+// フレーム時間の定義（60FPSを想定）
 const frameTime = (1 / 60) * 1000;
-// ボタン状態
-let isSpace = false;
-let timerRunning = false;
 
 // オーディオ関連の管理クラス
 class AudioManager {

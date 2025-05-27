@@ -1,0 +1,37 @@
+:root {
+    --timerSize: 4em;
+}
+
+body {
+    background-color: #efefef;
+}
+
+header{
+    display: flex;
+}
+header div{
+    padding: 0.5em;
+}
+.title{
+    margin: auto;
+}
+.explain{
+    margin: auto;
+}
+
+main{
+    display: flex;
+    border-top: 1px solid #1f1f1f;
+}
+main div{
+    padding: 1em;
+}
+.settings p{
+    display: block;
+}
+main input{
+    width: 4em;
+}
+.display{
+    font-size: var(--timerSize);
+}

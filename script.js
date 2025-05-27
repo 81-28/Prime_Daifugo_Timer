@@ -6,7 +6,7 @@ const SOUND_END_DURATION = 300;
 const TIMER_DISPLAY_ID = "display";
 const DURATION_INPUT_ID = "duration";
 const TIMER_SIZE_INPUT_ID = "timerSize";
-const FADE_TIME = 0.002; // フェードイン・アウト時間（秒）
+const FADE_TIME = 0.006; // フェードイン・アウト時間（秒）
 const TIMER_REFRESH_INTERVAL = (1 / 60) * 1000; // 60FPS相当
 
 // オーディオ管理クラス
@@ -17,7 +17,8 @@ class AudioManager {
         this.gainNode = null;
         this.soundTimer = null;
     }
-    startSound(frequency) {
+    async startSound(frequency) {
+        await this.audioContext.resume(); // AudioContextを再開
         this.stopSound();
         this.oscillator = this.audioContext.createOscillator();
         this.gainNode = this.audioContext.createGain();
@@ -52,8 +53,8 @@ class AudioManager {
             this.oscillator = null;
         }
     }
-    playSound(frequency, duration) {
-        this.startSound(frequency);
+    async playSound(frequency, duration) {
+        await this.startSound(frequency);
         clearTimeout(this.soundTimer);
         this.soundTimer = setTimeout(() => {
             this.stopSound();
@@ -77,14 +78,14 @@ class TimerManager {
         const durationSecond = Number(document.getElementById(DURATION_INPUT_ID).value);
         this.timer = isNaN(durationSecond) ? 0 : durationSecond * 1000;
     }
-    start() {
+    async start() {
         this.changeDuration();
         this.baseTime = Date.now();
         this.timerRunning = true;
-        audioManager.playSound(SOUND_START_FREQ, SOUND_START_DURATION);
+        await audioManager.playSound(SOUND_START_FREQ, SOUND_START_DURATION);
     }
-    end() {
-        audioManager.playSound(SOUND_END_FREQ, SOUND_END_DURATION);
+    async end() {
+        await audioManager.playSound(SOUND_END_FREQ, SOUND_END_DURATION);
         this.timerRunning = false;
     }
     refresh() {
@@ -127,7 +128,7 @@ UIManager.init();
 function handleKeyDown(event) {
     if (event.code === 'Space') {
         if (!timerManager.isSpace) {
-            timerManager.start();
+            timerManager.start(); // asyncだが、await不要（fire and forget）
         }
         timerManager.isSpace = true;
     }

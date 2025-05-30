@@ -35,6 +35,7 @@ class AudioManager {
         this.oscillator = null;
         this.gainNode = null;
         this.soundTimer = null;
+        this.continueTimer = null;
     }
     async startSound(frequency) {
         await this.audioContext.resume();
@@ -84,6 +85,13 @@ class AudioManager {
         this.soundTimer = setTimeout(() => {
             this.stopSound();
         }, duration);
+        clearTimeout(this.continueTimer);
+        this.continueTimer = setTimeout(() => {
+            if (!this.oscillator && !this.gainNode) {
+                console.log("Continuing sound...");
+                this.playSound(1, 1);
+            }
+        }, 10000);
     }
 }
 

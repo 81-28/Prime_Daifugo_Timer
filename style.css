@@ -35,10 +35,10 @@ main .settings div{
 .timer_settings{
     border-right: 1px solid var(--borderColor);
 }
-.alart_settings{
+.alert_settings{
     border-right: 1px solid var(--borderColor);
 }
-#alart{
+#alert{
     height: var(--timerSize);
 }
 .sound_settings{

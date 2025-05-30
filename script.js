@@ -11,14 +11,14 @@ const ELEMENT_ID = {
     DISPLAY: "display",
     DURATION: "duration",
     TIMER_SIZE: "timerSize",
-    ALERT: "alart",
-    ALERT_TIME: "alart_duration",
+    ALERT: "alert",
+    ALERT_TIME: "alert_duration",
     SOUND_START_FREQ: "sound_start_frequency",
     SOUND_START_DUR: "sound_start_duration",
     SOUND_END_FREQ: "sound_end_frequency",
     SOUND_END_DUR: "sound_end_duration",
-    SOUND_ALERT_FREQ: "sound_alart_frequency",
-    SOUND_ALERT_DUR: "sound_alart_duration"
+    SOUND_ALERT_FREQ: "sound_alert_frequency",
+    SOUND_ALERT_DUR: "sound_alert_duration"
 };
 const FADE_TIME = 0.006; // フェードイン・アウト時間（秒）
 const TIMER_REFRESH_INTERVAL = 1000 / 60; // 60FPS相当

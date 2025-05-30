@@ -2,28 +2,28 @@
 const DEFAULT_VALUES = Object.freeze({
     duration: 60,                // タイマー秒数（初期値）
     timerSize: 8,                // タイマー表示サイズ（em）
-    alert: true,                 // アラート有効
-    alert_duration: 10,          // アラート秒数
+    alarm: true,                 // アラーム有効
+    alarm_duration: 10,          // アラーム秒数
     sound_start_frequency: 440,  // 開始音周波数
     sound_start_duration: 100,   // 開始音長さ
     sound_end_frequency: 880,    // 終了音周波数
     sound_end_duration: 400,     // 終了音長さ
-    sound_alert_frequency: 660,  // アラート音周波数
-    sound_alert_duration: 200    // アラート音長さ
+    sound_alarm_frequency: 660,  // アラーム音周波数
+    sound_alarm_duration: 200    // アラーム音長さ
 });
 
 const ELEMENT_ID = Object.freeze({
     DISPLAY: "display",
     DURATION: "duration",
     TIMER_SIZE: "timerSize",
-    ALERT: "alert",
-    ALERT_TIME: "alert_duration",
+    ALARM: "alarm",
+    ALARM_TIME: "alarm_duration",
     SOUND_START_FREQ: "sound_start_frequency",
     SOUND_START_DUR: "sound_start_duration",
     SOUND_END_FREQ: "sound_end_frequency",
     SOUND_END_DUR: "sound_end_duration",
-    SOUND_ALERT_FREQ: "sound_alert_frequency",
-    SOUND_ALERT_DUR: "sound_alert_duration"
+    SOUND_ALERT_FREQ: "sound_alarm_frequency",
+    SOUND_ALERT_DUR: "sound_alarm_duration"
 });
 const FADE_TIME = 0.006; // フェードイン・アウト時間（秒）
 const TIMER_REFRESH_INTERVAL = 1000 / 60; // 60FPS相当
@@ -109,7 +109,7 @@ class TimerManager {
         this.displayTime = 0;
         this.isSpace = false;
         this.timerRunning = false;
-        this.alertPlayed = false;
+        this.alarmPlayed = false;
     }
     getInputValue(id, fallback = 0) {
         const val = Number(document.getElementById(id)?.value);
@@ -117,13 +117,13 @@ class TimerManager {
     }
     changeDuration() {
         this.timer = this.getInputValue(ELEMENT_ID.DURATION) * 1000;
-        this.alertPlayed = false;
+        this.alarmPlayed = false;
     }
     async start() {
         this.changeDuration();
         this.baseTime = Date.now();
         this.timerRunning = true;
-        this.alertPlayed = false;
+        this.alarmPlayed = false;
         const freq = this.getInputValue(ELEMENT_ID.SOUND_START_FREQ, DEFAULT_VALUES.sound_start_frequency);
         const dur = this.getInputValue(ELEMENT_ID.SOUND_START_DUR, DEFAULT_VALUES.sound_start_duration);
         await audioManager.playSound(freq, dur);
@@ -143,20 +143,20 @@ class TimerManager {
                 this.end();
             }
         }
-        this.checkAlert();
+        this.checkAlarm();
         UIManager.updateDisplay(this.displayTime);
     }
-    checkAlert() {
-        const alertEnabled = document.getElementById(ELEMENT_ID.ALERT)?.checked;
-        if (!alertEnabled || this.alertPlayed || !this.timerRunning) return;
-        const alertTime = this.getInputValue(ELEMENT_ID.ALERT_TIME) * 1000;
-        if (alertTime >= this.timer) return;
-        if (this.displayTime <= alertTime) {
-            const freq = this.getInputValue(ELEMENT_ID.SOUND_ALERT_FREQ, DEFAULT_VALUES.sound_alert_frequency);
-            const dur = this.getInputValue(ELEMENT_ID.SOUND_ALERT_DUR, DEFAULT_VALUES.sound_alert_duration);
+    checkAlarm() {
+        const alarmEnabled = document.getElementById(ELEMENT_ID.ALARM)?.checked;
+        if (!alarmEnabled || this.alarmPlayed || !this.timerRunning) return;
+        const alarmTime = this.getInputValue(ELEMENT_ID.ALARM_TIME) * 1000;
+        if (alarmTime >= this.timer) return;
+        if (this.displayTime <= alarmTime) {
+            const freq = this.getInputValue(ELEMENT_ID.SOUND_ALERT_FREQ, DEFAULT_VALUES.sound_alarm_frequency);
+            const dur = this.getInputValue(ELEMENT_ID.SOUND_ALERT_DUR, DEFAULT_VALUES.sound_alarm_duration);
             audioManager.playSound(freq, dur);
-            console.log(`Alert! Time left: ${this.displayTime / 1000} seconds`);
-            this.alertPlayed = true;
+            console.log(`Alarm! Time left: ${this.displayTime / 1000} seconds`);
+            this.alarmPlayed = true;
         }
     }
 }

@@ -36,10 +36,6 @@ main input{
 .timer-controls{
     margin: auto;
 }
-.space{
-    width: 0.5em;
-    margin: 0;
-}
 .sound-controls{
     margin: auto;
 }
@@ -55,8 +51,5 @@ main input{
 /* ここに書いたスタイルは450px未満にのみ適用される */
     main .controls{
         display: block;
-    }
-    .space{
-        display: none;
     }
 }

@@ -1,7 +1,7 @@
 // --- 設定・定数まとめ ---
 const DEFAULT_VALUES = Object.freeze({
     duration: 60,                // タイマー秒数（初期値）
-    timerSize: 4,                // タイマー表示サイズ（em）
+    timerSize: 8,                // タイマー表示サイズ（em）
     alert: true,                 // アラート有効
     alert_duration: 10,          // アラート秒数
     sound_start_frequency: 440,  // 開始音周波数

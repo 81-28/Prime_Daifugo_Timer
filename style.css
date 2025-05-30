@@ -1,7 +1,7 @@
 :root {
     --backgroundColor: #efefef;
     --borderColor:#1f1f1f;
-    --timerSize: 4em;
+    --timerSize: 2em;
 }
 
 body {
@@ -37,7 +37,7 @@ main input{
     margin: auto;
 }
 .space{
-    width: 1em;
+    width: 0.5em;
     margin: 0;
 }
 .sound-controls{

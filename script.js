@@ -38,15 +38,21 @@ class AudioManager {
     }
     async startSound(frequency) {
         await this.audioContext.resume();
-        this.stopSound();
+        const now = this.audioContext.currentTime;
+        if (this.oscillator && this.gainNode) {
+            // 既存のoscillatorがあれば周波数のみ変更し、フェードイン
+            this.oscillator.frequency.setValueAtTime(frequency, now);
+            this.gainNode.gain.cancelScheduledValues(now);
+            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+            this.gainNode.gain.linearRampToValueAtTime(1, now + FADE_TIME);
+            return;
+        }
         this.oscillator = this.audioContext.createOscillator();
         this.gainNode = this.audioContext.createGain();
         this.oscillator.type = 'sine';
-        this.oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+        this.oscillator.frequency.setValueAtTime(frequency, now);
         this.oscillator.connect(this.gainNode);
         this.gainNode.connect(this.audioContext.destination);
-        // フェードイン
-        const now = this.audioContext.currentTime;
         this.gainNode.gain.setValueAtTime(0, now);
         this.gainNode.gain.linearRampToValueAtTime(1, now + FADE_TIME);
         this.oscillator.start();

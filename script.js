@@ -27,7 +27,7 @@ const ELEMENT_ID = Object.freeze({
 });
 const FADE_TIME = 0.006; // フェードイン・アウト時間（秒）
 const TIMER_REFRESH_INTERVAL = 1000 / 60; // 60FPS相当
-const PRE_CONTINUE_SOUND_BEFORE_MS = 3000; // アラーム・タイムアップ前継続音タイミング
+const PRE_SOUND_BEFORE_MS = 2000; // アラーム・タイムアップ前音タイミング
 
 // オーディオ管理クラス
 class AudioManager {
@@ -36,15 +36,17 @@ class AudioManager {
         this.oscillator = null;
         this.gainNode = null;
         this.soundTimer = null;
+        this.soundPlaying = false;
+        this.silentPulseTimer = null;
     }
     async startSound(frequency) {
         await this.audioContext.resume();
         const now = this.audioContext.currentTime;
-        if (this.oscillator && this.gainNode) {
+        if (this.soundPlaying && this.oscillator && this.gainNode) {
             this.oscillator.frequency.setValueAtTime(frequency, now);
-            this._fadeGainTo(1, now);
             return;
         }
+        this._cleanupAudio();
         this.oscillator = this.audioContext.createOscillator();
         this.gainNode = this.audioContext.createGain();
         this.oscillator.type = 'sine';
@@ -52,41 +54,54 @@ class AudioManager {
         this.oscillator.connect(this.gainNode);
         this.gainNode.connect(this.audioContext.destination);
         this.gainNode.gain.setValueAtTime(0, now);
-        this._fadeGainTo(1, now);
+        this.gainNode.gain.linearRampToValueAtTime(1, now + FADE_TIME);
         this.oscillator.start();
-        console.log(`Sound started at frequency: ${frequency}Hz`);
+        this.soundPlaying = true;
     }
     stopSound() {
-        if (this.oscillator && this.gainNode) {
-            const now = this.audioContext.currentTime;
-            this._fadeGainTo(0, now);
-            setTimeout(() => this._cleanupAudio(), FADE_TIME * 1000 + 5);
-        } else if (this.oscillator) {
-            this.oscillator.stop();
-            this.oscillator.disconnect();
-            this.oscillator = null;
-        }
+        if (!this.soundPlaying || !this.oscillator || !this.gainNode) return;
+        const now = this.audioContext.currentTime;
+        this.gainNode.gain.cancelScheduledValues(now);
+        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+        this.gainNode.gain.linearRampToValueAtTime(0, now + FADE_TIME);
+        setTimeout(() => this._cleanupAudio(), FADE_TIME * 1000 + 10);
     }
     async playSound(frequency, duration) {
         await this.startSound(frequency);
         if (this.soundTimer) clearTimeout(this.soundTimer);
         this.soundTimer = setTimeout(() => this.stopSound(), duration);
     }
-    _fadeGainTo(value, now) {
-        if (!this.gainNode) return;
-        this.gainNode.gain.cancelScheduledValues(now);
-        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-        this.gainNode.gain.linearRampToValueAtTime(value, now + FADE_TIME);
+    playSilent() {
+        if (this.silentPulseTimer) return;
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1, this.audioContext.currentTime);
+        gain.gain.setValueAtTime(0.0001, this.audioContext.currentTime);
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        osc.start();
+        this.silentPulseTimer = setTimeout(() => {
+            osc.stop();
+            osc.disconnect();
+            gain.disconnect();
+            this.silentPulseTimer = null;
+        }, 100);
     }
     _cleanupAudio() {
         if (this.oscillator) {
-            this.oscillator.stop();
+            try { this.oscillator.stop(); } catch (e) {}
             this.oscillator.disconnect();
             this.oscillator = null;
         }
         if (this.gainNode) {
             this.gainNode.disconnect();
             this.gainNode = null;
+        }
+        this.soundPlaying = false;
+        if (this.soundTimer) {
+            clearTimeout(this.soundTimer);
+            this.soundTimer = null;
         }
     }
 }
@@ -106,8 +121,8 @@ class TimerManager {
         this.timerRunning = false;
         this.alarmPlayed = false;
         this.alarmTime = 0;
-        this.preAlarmContinueSoundPlayed = false;
-        this.preEndContinueSoundPlayed = false;
+        this.preAlarmSoundPlayed = false;
+        this.preEndSoundPlayed = false;
     }
     getInputValue(id, fallback = 0) {
         const val = Number(document.getElementById(id)?.value);
@@ -121,8 +136,8 @@ class TimerManager {
         this.baseTime = Date.now();
         this.timerRunning = true;
         this.alarmPlayed = false;
-        this.preAlarmContinueSoundPlayed = false;
-        this.preEndContinueSoundPlayed = false;
+        this.preAlarmSoundPlayed = false;
+        this.preEndSoundPlayed = false;
         const freq = this.getInputValue(ELEMENT_ID.SOUND_START_FREQ, DEFAULT_VALUES.sound_start_frequency);
         const dur = this.getInputValue(ELEMENT_ID.SOUND_START_DUR, DEFAULT_VALUES.sound_start_duration);
         await audioManager.playSound(freq, dur);
@@ -143,10 +158,10 @@ class TimerManager {
             }
         }
         this._checkAlarm();
-        this._checkPreContinueSounds();
-        UIManager.updateDisplay(this.displayTime);
+        this._checkPreSounds();
+        uiManager.updateDisplay(this.displayTime);
     }
-    _checkPreContinueSounds() {
+    _checkPreSounds() {
         if (!this.timerRunning) return;
         const alarmEnabled = document.getElementById(ELEMENT_ID.ALARM)?.checked;
         this.alarmTime = this.getInputValue(ELEMENT_ID.ALARM_TIME) * 1000;
@@ -154,23 +169,21 @@ class TimerManager {
         if (
             alarmEnabled &&
             this.alarmTime < this.timer &&
-            !this.preAlarmContinueSoundPlayed &&
-            this.displayTime <= this.alarmTime + PRE_CONTINUE_SOUND_BEFORE_MS &&
-            this.displayTime > this.alarmTime &&
-            !audioManager.oscillator && !audioManager.gainNode
+            !this.preAlarmSoundPlayed &&
+            this.displayTime <= this.alarmTime + PRE_SOUND_BEFORE_MS &&
+            this.displayTime > this.alarmTime
         ) {
-            this.preAlarmContinueSoundPlayed = true;
-            audioManager.playSound(1, 1);
+            this.preAlarmSoundPlayed = true;
+            audioManager.playSilent();
         }
         // タイムアップ前
         if (
-            !this.preEndContinueSoundPlayed &&
-            this.displayTime <= PRE_CONTINUE_SOUND_BEFORE_MS &&
-            this.displayTime > 0 &&
-            !audioManager.oscillator && !audioManager.gainNode
+            !this.preEndSoundPlayed &&
+            this.displayTime <= PRE_SOUND_BEFORE_MS &&
+            this.displayTime > 0
         ) {
-            this.preEndContinueSoundPlayed = true;
-            audioManager.playSound(1, 1);
+            this.preEndSoundPlayed = true;
+            audioManager.playSilent();
         }
     }
     _checkAlarm() {
@@ -190,23 +203,23 @@ const timerManager = new TimerManager();
 
 // UI管理クラス
 class UIManager {
-    static init() {
+    constructor() {
         this.timerDisplay = document.getElementById(ELEMENT_ID.DISPLAY);
         this.timerSizeInput = document.getElementById(ELEMENT_ID.TIMER_SIZE);
     }
-    static updateDisplay(timeMs) {
+    updateDisplay(timeMs) {
         if (this.timerDisplay) {
             this.timerDisplay.innerHTML = (timeMs / 1000).toFixed(2);
         }
     }
-    static changeTimerSize() {
+    changeTimerSize() {
         const timerSize = Number(this.timerSizeInput.value);
         if (!isNaN(timerSize)) {
             document.documentElement.style.setProperty('--timerSize', `${timerSize}em`);
         }
     }
 }
-UIManager.init();
+const uiManager = new UIManager();
 
 // 初期値をinputに反映
 function applyDefaultValues() {
@@ -219,7 +232,7 @@ function applyDefaultValues() {
             elem.value = value;
         }
     });
-    UIManager.changeTimerSize();
+    uiManager.changeTimerSize();
 }
 applyDefaultValues();
 
@@ -236,7 +249,7 @@ function handleKeyUp(event) {
     }
 }
 
-UIManager.timerSizeInput.addEventListener("change", UIManager.changeTimerSize.bind(UIManager));
+uiManager.timerSizeInput.addEventListener("change", uiManager.changeTimerSize.bind(uiManager));
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
 document.getElementById(ELEMENT_ID.DISPLAY)?.addEventListener("click", () => timerManager.start());

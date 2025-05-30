@@ -42,7 +42,6 @@ main input{
 }
 .sound-controls{
     margin: auto;
-    font-size: 0.7em;
 }
 #display{
     font-size: var(--timerSize);
@@ -50,4 +49,14 @@ main input{
     margin-top: 0.2em;
     border-radius: 0.2em;
     border: 1px solid var(--borderColor);
+}
+
+@media screen and (max-width: 450px){
+/* ここに書いたスタイルは450px未満にのみ適用される */
+    main .controls{
+        display: block;
+    }
+    .space{
+        display: none;
+    }
 }

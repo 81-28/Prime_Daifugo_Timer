@@ -6,9 +6,9 @@ const DEFAULT_VALUES = Object.freeze({
     alert_duration: 10,          // アラート秒数
     sound_start_frequency: 440,  // 開始音周波数
     sound_start_duration: 100,   // 開始音長さ
-    sound_end_frequency: 800,    // 終了音周波数
+    sound_end_frequency: 880,    // 終了音周波数
     sound_end_duration: 400,     // 終了音長さ
-    sound_alert_frequency: 600,  // アラート音周波数
+    sound_alert_frequency: 660,  // アラート音周波数
     sound_alert_duration: 200    // アラート音長さ
 });
 

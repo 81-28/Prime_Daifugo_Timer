@@ -25,6 +25,24 @@ header div{
 
 main .settings{
     padding: 1em;
+    display: flex;
+}
+main .settings div{
+    width: 50%;
+    margin-left: 1em;
+    margin-right: 1em;
+}
+.timer_settings{
+    border-right: 1px solid var(--borderColor);
+}
+.alart_settings{
+    border-right: 1px solid var(--borderColor);
+}
+#alart{
+    height: var(--timerSize);
+}
+.sound_settings{
+    font-size: 0.6em;
 }
 main input{
     width: 4em;

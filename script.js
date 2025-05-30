@@ -1,13 +1,27 @@
 // 定数定義
-const SOUND_START_FREQ = 600;
-const SOUND_START_DURATION = 100;
-const SOUND_END_FREQ = 800;
-const SOUND_END_DURATION = 300;
-const TIMER_DISPLAY_ID = "display";
-const DURATION_INPUT_ID = "duration";
-const TIMER_SIZE_INPUT_ID = "timerSize";
+const SOUND = {
+    START_FREQ: 600,
+    START_DURATION: 100,
+    END_FREQ: 800,
+    END_DURATION: 300,
+    ALERT_FREQ: 800,
+    ALERT_DURATION: 200
+};
+const ELEMENT_ID = {
+    DISPLAY: "display",
+    DURATION: "duration",
+    TIMER_SIZE: "timerSize",
+    ALERT: "alart",
+    ALERT_TIME: "alart_duration",
+    SOUND_START_FREQ: "sound_start_frequency",
+    SOUND_START_DUR: "sound_start_duration",
+    SOUND_END_FREQ: "sound_end_frequency",
+    SOUND_END_DUR: "sound_end_duration",
+    SOUND_ALERT_FREQ: "sound_alart_frequency",
+    SOUND_ALERT_DUR: "sound_alart_duration"
+};
 const FADE_TIME = 0.006; // フェードイン・アウト時間（秒）
-const TIMER_REFRESH_INTERVAL = (1 / 60) * 1000; // 60FPS相当
+const TIMER_REFRESH_INTERVAL = 1000 / 60; // 60FPS相当
 
 // オーディオ管理クラス
 class AudioManager {
@@ -18,7 +32,7 @@ class AudioManager {
         this.soundTimer = null;
     }
     async startSound(frequency) {
-        await this.audioContext.resume(); // AudioContextを再開
+        await this.audioContext.resume();
         this.stopSound();
         this.oscillator = this.audioContext.createOscillator();
         this.gainNode = this.audioContext.createGain();
@@ -46,7 +60,7 @@ class AudioManager {
                     this.oscillator = null;
                     this.gainNode = null;
                 }
-            }, FADE_TIME * 1000 + 5); // 少し余裕を持たせて停止
+            }, FADE_TIME * 1000 + 5);
         } else if (this.oscillator) {
             this.oscillator.stop();
             this.oscillator.disconnect();
@@ -73,19 +87,29 @@ class TimerManager {
         this.displayTime = 0;
         this.isSpace = false;
         this.timerRunning = false;
+        this.alertPlayed = false;
+    }
+    getInputValue(id, fallback = 0) {
+        const val = Number(document.getElementById(id)?.value);
+        return isNaN(val) ? fallback : val;
     }
     changeDuration() {
-        const durationSecond = Number(document.getElementById(DURATION_INPUT_ID).value);
-        this.timer = isNaN(durationSecond) ? 0 : durationSecond * 1000;
+        this.timer = this.getInputValue(ELEMENT_ID.DURATION) * 1000;
+        this.alertPlayed = false;
     }
     async start() {
         this.changeDuration();
         this.baseTime = Date.now();
         this.timerRunning = true;
-        await audioManager.playSound(SOUND_START_FREQ, SOUND_START_DURATION);
+        this.alertPlayed = false;
+        const freq = this.getInputValue(ELEMENT_ID.SOUND_START_FREQ, SOUND.START_FREQ);
+        const dur = this.getInputValue(ELEMENT_ID.SOUND_START_DUR, SOUND.START_DURATION);
+        await audioManager.playSound(freq, dur);
     }
     async end() {
-        await audioManager.playSound(SOUND_END_FREQ, SOUND_END_DURATION);
+        const freq = this.getInputValue(ELEMENT_ID.SOUND_END_FREQ, SOUND.END_FREQ);
+        const dur = this.getInputValue(ELEMENT_ID.SOUND_END_DUR, SOUND.END_DURATION);
+        await audioManager.playSound(freq, dur);
         this.timerRunning = false;
     }
     refresh() {
@@ -97,7 +121,21 @@ class TimerManager {
                 this.end();
             }
         }
+        this.checkAlert();
         UIManager.updateDisplay(this.displayTime);
+    }
+    checkAlert() {
+        const alertEnabled = document.getElementById(ELEMENT_ID.ALERT)?.checked;
+        if (!alertEnabled || this.alertPlayed || !this.timerRunning) return;
+        const alertTime = this.getInputValue(ELEMENT_ID.ALERT_TIME) * 1000;
+        if (alertTime >= this.timer) return;
+        if (this.displayTime <= alertTime) {
+            const freq = this.getInputValue(ELEMENT_ID.SOUND_ALERT_FREQ, SOUND.ALERT_FREQ);
+            const dur = this.getInputValue(ELEMENT_ID.SOUND_ALERT_DUR, SOUND.ALERT_DURATION);
+            audioManager.playSound(freq, dur);
+            console.log(`Alert! Time left: ${this.displayTime / 1000} seconds`);
+            this.alertPlayed = true;
+        }
     }
 }
 
@@ -106,8 +144,8 @@ const timerManager = new TimerManager();
 // UI管理クラス
 class UIManager {
     static init() {
-        this.timerDisplay = document.getElementById(TIMER_DISPLAY_ID);
-        this.timerSizeInput = document.getElementById(TIMER_SIZE_INPUT_ID);
+        this.timerDisplay = document.getElementById(ELEMENT_ID.DISPLAY);
+        this.timerSizeInput = document.getElementById(ELEMENT_ID.TIMER_SIZE);
     }
     static updateDisplay(timeMs) {
         if (this.timerDisplay) {
@@ -126,10 +164,8 @@ UIManager.init();
 
 // イベントリスナー
 function handleKeyDown(event) {
-    if (event.code === 'Space') {
-        if (!timerManager.isSpace) {
-            timerManager.start(); // asyncだが、await不要（fire and forget）
-        }
+    if (event.code === 'Space' && !timerManager.isSpace) {
+        timerManager.start();
         timerManager.isSpace = true;
     }
 }
@@ -139,17 +175,14 @@ function handleKeyUp(event) {
     }
 }
 
-// イベント登録
-UIManager.timerSizeInput.addEventListener("change", () => UIManager.changeTimerSize());
+UIManager.timerSizeInput.addEventListener("change", UIManager.changeTimerSize.bind(UIManager));
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
 
-// クリックでタイマー開始
-const displayElem = document.getElementById(TIMER_DISPLAY_ID);
+const displayElem = document.getElementById(ELEMENT_ID.DISPLAY);
 if (displayElem) {
     displayElem.addEventListener("click", () => timerManager.start());
 }
 
-// 一定時間毎にタイマー更新
 setInterval(() => timerManager.refresh(), TIMER_REFRESH_INTERVAL);
 timerManager.refresh();

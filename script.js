@@ -1,15 +1,19 @@
 // --- 設定・定数まとめ ---
+const CONTINUE_SOUND_DELAY = 10000; // サウンド継続ディレイ(ms)
+const ALARM_CHECK_TIME = CONTINUE_SOUND_DELAY + 2000; // アラーム判定基準時間(ms)
 const DEFAULT_VALUES = Object.freeze({
-    duration: 60,                // タイマー秒数（初期値）
-    timerSize: 8,                // タイマー表示サイズ（em）
-    alarm: true,                 // アラーム有効
-    alarm_duration: 10,          // アラーム秒数
-    sound_start_frequency: 440,  // 開始音周波数
-    sound_start_duration: 100,   // 開始音長さ
-    sound_end_frequency: 880,    // 終了音周波数
-    sound_end_duration: 400,     // 終了音長さ
-    sound_alarm_frequency: 660,  // アラーム音周波数
-    sound_alarm_duration: 200    // アラーム音長さ
+    duration: 60,                               // タイマー秒数（初期値）
+    timerSize: 8,                               // タイマー表示サイズ（em）
+    alarm: true,                                // アラーム有効
+    alarm_duration: 10,                         // アラーム秒数
+    sound_start_frequency: 440,                 // 開始音周波数
+    sound_start_duration: 100,                  // 開始音長さ
+    sound_end_frequency: 880,                   // 終了音周波数
+    sound_end_duration: 400,                    // 終了音長さ
+    sound_alarm_frequency: 660,                 // アラーム音周波数
+    sound_alarm_duration: 200,                  // アラーム音長さ
+    continue_sound_delay: CONTINUE_SOUND_DELAY, // サウンド継続ディレイ(ms)
+    alarm_check_time: ALARM_CHECK_TIME          // アラーム判定基準時間(ms)
 });
 
 const ELEMENT_ID = Object.freeze({
@@ -70,15 +74,17 @@ class AudioManager {
         await this.startSound(frequency);
         this._clearTimers();
         this.soundTimer = setTimeout(() => this.stopSound(), duration);
-        this.continueTimer = setTimeout(() => {
-            if (!this.oscillator && !this.gainNode) {
-                console.log("Continuing sound...");
-                this.playSound(1, 1);
-            }
-        }, 10000);
+        if (typeof timerManager !== 'undefined' && timerManager.timerRunning && timerManager.displayTime >= DEFAULT_VALUES.alarm_check_time && (timerManager.displayTime >= timerManager.alarmTime + DEFAULT_VALUES.alarm_check_time || timerManager.alarmPlayed)) {
+            this.continueTimer = setTimeout(() => {
+                if (!this.oscillator && !this.gainNode) {
+                    console.log("Continuing sound...");
+                    this.playSound(1, 1);
+                }
+            }, DEFAULT_VALUES.continue_sound_delay);
+        }
     }
-
     _fadeGainTo(value, now) {
+        if (!this.gainNode) return;
         this.gainNode.gain.cancelScheduledValues(now);
         this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
         this.gainNode.gain.linearRampToValueAtTime(value, now + FADE_TIME);
@@ -87,14 +93,18 @@ class AudioManager {
         if (this.oscillator) {
             this.oscillator.stop();
             this.oscillator.disconnect();
-            this.gainNode.disconnect();
             this.oscillator = null;
+        }
+        if (this.gainNode) {
+            this.gainNode.disconnect();
             this.gainNode = null;
         }
     }
     _clearTimers() {
-        clearTimeout(this.soundTimer);
-        clearTimeout(this.continueTimer);
+        if (this.soundTimer) clearTimeout(this.soundTimer);
+        if (this.continueTimer) clearTimeout(this.continueTimer);
+        this.soundTimer = null;
+        this.continueTimer = null;
     }
 }
 
@@ -110,6 +120,7 @@ class TimerManager {
         this.isSpace = false;
         this.timerRunning = false;
         this.alarmPlayed = false;
+        this.alarmTime = 0;
     }
     getInputValue(id, fallback = 0) {
         const val = Number(document.getElementById(id)?.value);
@@ -149,14 +160,14 @@ class TimerManager {
     checkAlarm() {
         const alarmEnabled = document.getElementById(ELEMENT_ID.ALARM)?.checked;
         if (!alarmEnabled || this.alarmPlayed || !this.timerRunning) return;
-        const alarmTime = this.getInputValue(ELEMENT_ID.ALARM_TIME) * 1000;
-        if (alarmTime >= this.timer) return;
-        if (this.displayTime <= alarmTime) {
+        this.alarmTime = this.getInputValue(ELEMENT_ID.ALARM_TIME) * 1000;
+        if (this.alarmTime >= this.timer) return;
+        if (this.displayTime <= this.alarmTime) {
             const freq = this.getInputValue(ELEMENT_ID.SOUND_ALERT_FREQ, DEFAULT_VALUES.sound_alarm_frequency);
             const dur = this.getInputValue(ELEMENT_ID.SOUND_ALERT_DUR, DEFAULT_VALUES.sound_alarm_duration);
+            this.alarmPlayed = true;
             audioManager.playSound(freq, dur);
             console.log(`Alarm! Time left: ${this.displayTime / 1000} seconds`);
-            this.alarmPlayed = true;
         }
     }
 }

@@ -58,6 +58,7 @@ class AudioManager {
         this.gainNode.gain.setValueAtTime(0, now);
         this._fadeGainTo(1, now);
         this.oscillator.start();
+        console.log(`Sound started at frequency: ${frequency} Hz`);
     }
     stopSound() {
         if (this.oscillator && this.gainNode) {
@@ -77,7 +78,6 @@ class AudioManager {
         if (typeof timerManager !== 'undefined' && timerManager.timerRunning && timerManager.displayTime >= DEFAULT_VALUES.alarm_check_time && (timerManager.displayTime >= timerManager.alarmTime + DEFAULT_VALUES.alarm_check_time || timerManager.alarmPlayed)) {
             this.continueTimer = setTimeout(() => {
                 if (!this.oscillator && !this.gainNode) {
-                    console.log("Continuing sound...");
                     this.playSound(1, 1);
                 }
             }, DEFAULT_VALUES.continue_sound_delay);
@@ -128,7 +128,6 @@ class TimerManager {
     }
     changeDuration() {
         this.timer = this.getInputValue(ELEMENT_ID.DURATION) * 1000;
-        this.alarmPlayed = false;
     }
     async start() {
         this.changeDuration();

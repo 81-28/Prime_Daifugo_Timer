@@ -162,6 +162,36 @@ class UIManager {
 
 UIManager.init();
 
+// 初期値を一括管理
+const DEFAULT_VALUES = {
+    duration: 60,
+    timerSize: 4,
+    alert: true,
+    alert_duration: 10,
+    sound_start_frequency: 440,
+    sound_start_duration: 100,
+    sound_end_frequency: 800,
+    sound_end_duration: 400,
+    sound_alert_frequency: 600,
+    sound_alert_duration: 200
+};
+
+// 初期値をinputに反映
+function applyDefaultValues() {
+    Object.entries(DEFAULT_VALUES).forEach(([key, value]) => {
+        const elem = document.getElementById(key);
+        if (!elem) return;
+        if (elem.type === 'checkbox') {
+            elem.checked = Boolean(value);
+        } else {
+            elem.value = value;
+        }
+    });
+    UIManager.changeTimerSize();
+}
+
+applyDefaultValues();
+
 // イベントリスナー
 function handleKeyDown(event) {
     if (event.code === 'Space' && !timerManager.isSpace) {

@@ -59,9 +59,7 @@ class AudioManager {
         if (this.oscillator && this.gainNode) {
             const now = this.audioContext.currentTime;
             this._fadeGainTo(0, now);
-            setTimeout(() => {
-                this._cleanupAudio();
-            }, FADE_TIME * 1000 + 5);
+            setTimeout(() => this._cleanupAudio(), FADE_TIME * 1000 + 5);
         } else if (this.oscillator) {
             this.oscillator.stop();
             this.oscillator.disconnect();
@@ -219,10 +217,7 @@ UIManager.timerSizeInput.addEventListener("change", UIManager.changeTimerSize.bi
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
 
-const displayElem = document.getElementById(ELEMENT_ID.DISPLAY);
-if (displayElem) {
-    displayElem.addEventListener("click", () => timerManager.start());
-}
+document.getElementById(ELEMENT_ID.DISPLAY)?.addEventListener("click", () => timerManager.start());
 
 setInterval(() => timerManager.refresh(), TIMER_REFRESH_INTERVAL);
 timerManager.refresh();

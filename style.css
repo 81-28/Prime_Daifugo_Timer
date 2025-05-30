@@ -14,7 +14,7 @@ header{
     border-bottom: 1px solid var(--borderColor);
 }
 header div{
-    padding: 0.5em;
+    padding: 0 1em;
 }
 .title{
     margin: auto;
@@ -23,33 +23,31 @@ header div{
     margin: auto;
 }
 
-main .settings{
-    padding: 1em;
+main .controls{
+    padding: 0 1em;
     display: flex;
-}
-main .settings div{
-    width: 50%;
-    margin-left: 1em;
-    margin-right: 1em;
-}
-.timer_settings{
-    border-right: 1px solid var(--borderColor);
-}
-.alert_settings{
-    border-right: 1px solid var(--borderColor);
-}
-#alert{
-    height: var(--timerSize);
-}
-.sound_settings{
-    font-size: 0.6em;
 }
 main input{
     width: 4em;
 }
+#alert{
+    height: 4em;
+}
+.timer-controls{
+    margin: auto;
+}
+.space{
+    width: 1em;
+    margin: 0;
+}
+.sound-controls{
+    margin: auto;
+    font-size: 0.7em;
+}
 #display{
     font-size: var(--timerSize);
     text-align: center;
+    margin-top: 0.2em;
     border-radius: 0.2em;
     border: 1px solid var(--borderColor);
 }

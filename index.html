@@ -1,76 +1,33 @@
 <!DOCTYPE html>
 <html lang="ja">
-    <head>
-        <title>Prime Daifugo Timer</title>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-        <link rel="stylesheet" href="style.css" />
-    </head>
-    <body>
-        <header>
-            <div class="title"><h2>Prime Daifugo Timer</h3></div>
-            <div class="explain"><h4>Press SpaceKey or Click Timer to Start Timer</h4></div>
-        </header>
-        <main>
-            <div class="settings">
-                <div class="timer_settings">
-                    <p>
-                        <label for="duration">制限時間:
-                        <input type="number" id="duration" name="duration" min="0" value="60">
-                        秒</label>
-                    </p>
-                    <p>
-                        <label for="timerSize">サイズ　:</label>
-                        <input type="number" id="timerSize" name="timerSize" min="0" value="4">
-                    </p>
-                </div>
-                <div class="alert_settings">
-                    <p class="alert_checkbox">
-                        <label for="alert">アラート:</label>
-                        <input type="checkbox" id="alert" name="alert" checked>
-                    </p>
-                    <p>
-                        <label for="alert_duration">アラートタイミング:残り
-                        <input type="number" id="alert_duration" name="alert_duration" min="0" value="10">
-                        秒</label>
-                    </p>
-                </div>
-                <div class="sound_settings">
-                    <p>
-                        <label for="sound_start_frequency">開始音周波数:
-                        <input type="number" id="sound_start_frequency" name="sound_start_frequency" min="0" value="400">
-                        Hz</label>
-                    </p>
-                    <p>
-                        <label for="sound_start_duration">開始音持続時間:
-                        <input type="number" id="sound_start_duration" name="sound_start_duration" min="0" value="100">
-                        ミリ秒</label>
-                    </p>
-                    <p>
-                        <label for="sound_end_frequency">終了音周波数:
-                        <input type="number" id="sound_end_frequency" name="sound_end_frequency" min="0" value="800">
-                        Hz</label>
-                    </p>
-                    <p>
-                        <label for="sound_end_duration">終了音持続時間:
-                        <input type="number" id="sound_end_duration" name="sound_end_duration" min="0" value="400">
-                        ミリ秒</label>
-                    </p>
-                    <p>
-                        <label for="sound_alert_frequency">アラート音周波数:
-                        <input type="number" id="sound_alert_frequency" name="sound_alert_frequency" min="0" value="600">
-                        Hz</label>
-                    </p>
-                    <p>
-                        <label for="sound_alert_duration">アラート音持続時間:
-                        <input type="number" id="sound_alert_duration" name="sound_alert_duration" min="0" value="200">
-                        ミリ秒</label>
-                    </p>
-                </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Daifugo Timer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="title"><h2>Prime Daifugo Timer</h3></div>
+        <div class="explain"><h4>Press SpaceKey or Click Timer to Start Timer</h4></div>
+    </header>
+    <main>
+        <div id="display" class="timer-display">タイマーが使用できません</div>
+        <div class="controls">
+            <div class="timer-controls">
+                <p><label>秒数　: <input id="duration" type="number" min="1" step="1"></label></p>
+                <p><label>サイズ: <input id="timerSize" type="number" min="1" step="1"></label></p>
+                <p><label>アラート <input id="alert" type="checkbox"></label></p>
+                <p><label>アラート秒: <input id="alert_duration" type="number" min="1" step="1"></label></p>
             </div>
-            <div id="display">0.00</div>
-        </main>
-
-        <script src="script.js"></script>
-    </body>
+            <div class="space"></div>
+            <div class="sound-controls">
+                <p><label>開始音　　: <input id="sound_start_frequency" type="number">Hz </label><label><input id="sound_start_duration" type="number">ms</label></p>
+                <p><label>終了音　　: <input id="sound_end_frequency" type="number">Hz </label><label><input id="sound_end_duration" type="number">ms</label></p>
+                <p><label>アラート音: <input id="sound_alert_frequency" type="number">Hz </label><label><input id="sound_alert_duration" type="number">ms</label></p>
+            </div>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
 </html>

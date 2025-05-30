@@ -1,13 +1,18 @@
-// 定数定義
-const SOUND = {
-    START_FREQ: 600,
-    START_DURATION: 100,
-    END_FREQ: 800,
-    END_DURATION: 300,
-    ALERT_FREQ: 800,
-    ALERT_DURATION: 200
-};
-const ELEMENT_ID = {
+// --- 設定・定数まとめ ---
+const DEFAULT_VALUES = Object.freeze({
+    duration: 60,                // タイマー秒数（初期値）
+    timerSize: 4,                // タイマー表示サイズ（em）
+    alert: true,                 // アラート有効
+    alert_duration: 10,          // アラート秒数
+    sound_start_frequency: 440,  // 開始音周波数
+    sound_start_duration: 100,   // 開始音長さ
+    sound_end_frequency: 800,    // 終了音周波数
+    sound_end_duration: 400,     // 終了音長さ
+    sound_alert_frequency: 600,  // アラート音周波数
+    sound_alert_duration: 200    // アラート音長さ
+});
+
+const ELEMENT_ID = Object.freeze({
     DISPLAY: "display",
     DURATION: "duration",
     TIMER_SIZE: "timerSize",
@@ -19,7 +24,7 @@ const ELEMENT_ID = {
     SOUND_END_DUR: "sound_end_duration",
     SOUND_ALERT_FREQ: "sound_alert_frequency",
     SOUND_ALERT_DUR: "sound_alert_duration"
-};
+});
 const FADE_TIME = 0.006; // フェードイン・アウト時間（秒）
 const TIMER_REFRESH_INTERVAL = 1000 / 60; // 60FPS相当
 
@@ -102,13 +107,13 @@ class TimerManager {
         this.baseTime = Date.now();
         this.timerRunning = true;
         this.alertPlayed = false;
-        const freq = this.getInputValue(ELEMENT_ID.SOUND_START_FREQ, SOUND.START_FREQ);
-        const dur = this.getInputValue(ELEMENT_ID.SOUND_START_DUR, SOUND.START_DURATION);
+        const freq = this.getInputValue(ELEMENT_ID.SOUND_START_FREQ, DEFAULT_VALUES.sound_start_frequency);
+        const dur = this.getInputValue(ELEMENT_ID.SOUND_START_DUR, DEFAULT_VALUES.sound_start_duration);
         await audioManager.playSound(freq, dur);
     }
     async end() {
-        const freq = this.getInputValue(ELEMENT_ID.SOUND_END_FREQ, SOUND.END_FREQ);
-        const dur = this.getInputValue(ELEMENT_ID.SOUND_END_DUR, SOUND.END_DURATION);
+        const freq = this.getInputValue(ELEMENT_ID.SOUND_END_FREQ, DEFAULT_VALUES.sound_end_frequency);
+        const dur = this.getInputValue(ELEMENT_ID.SOUND_END_DUR, DEFAULT_VALUES.sound_end_duration);
         await audioManager.playSound(freq, dur);
         this.timerRunning = false;
     }
@@ -130,8 +135,8 @@ class TimerManager {
         const alertTime = this.getInputValue(ELEMENT_ID.ALERT_TIME) * 1000;
         if (alertTime >= this.timer) return;
         if (this.displayTime <= alertTime) {
-            const freq = this.getInputValue(ELEMENT_ID.SOUND_ALERT_FREQ, SOUND.ALERT_FREQ);
-            const dur = this.getInputValue(ELEMENT_ID.SOUND_ALERT_DUR, SOUND.ALERT_DURATION);
+            const freq = this.getInputValue(ELEMENT_ID.SOUND_ALERT_FREQ, DEFAULT_VALUES.sound_alert_frequency);
+            const dur = this.getInputValue(ELEMENT_ID.SOUND_ALERT_DUR, DEFAULT_VALUES.sound_alert_duration);
             audioManager.playSound(freq, dur);
             console.log(`Alert! Time left: ${this.displayTime / 1000} seconds`);
             this.alertPlayed = true;
@@ -161,20 +166,6 @@ class UIManager {
 }
 
 UIManager.init();
-
-// 初期値を一括管理
-const DEFAULT_VALUES = {
-    duration: 60,
-    timerSize: 4,
-    alert: true,
-    alert_duration: 10,
-    sound_start_frequency: 440,
-    sound_start_duration: 100,
-    sound_end_frequency: 800,
-    sound_end_duration: 400,
-    sound_alert_frequency: 600,
-    sound_alert_duration: 200
-};
 
 // 初期値をinputに反映
 function applyDefaultValues() {

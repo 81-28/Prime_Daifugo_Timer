@@ -41,11 +41,8 @@ class AudioManager {
         await this.audioContext.resume();
         const now = this.audioContext.currentTime;
         if (this.oscillator && this.gainNode) {
-            // 既存のoscillatorがあれば周波数のみ変更し、フェードイン
             this.oscillator.frequency.setValueAtTime(frequency, now);
-            this.gainNode.gain.cancelScheduledValues(now);
-            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-            this.gainNode.gain.linearRampToValueAtTime(1, now + FADE_TIME);
+            this._fadeGainTo(1, now);
             return;
         }
         this.oscillator = this.audioContext.createOscillator();
@@ -55,23 +52,15 @@ class AudioManager {
         this.oscillator.connect(this.gainNode);
         this.gainNode.connect(this.audioContext.destination);
         this.gainNode.gain.setValueAtTime(0, now);
-        this.gainNode.gain.linearRampToValueAtTime(1, now + FADE_TIME);
+        this._fadeGainTo(1, now);
         this.oscillator.start();
     }
     stopSound() {
         if (this.oscillator && this.gainNode) {
             const now = this.audioContext.currentTime;
-            this.gainNode.gain.cancelScheduledValues(now);
-            this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
-            this.gainNode.gain.linearRampToValueAtTime(0, now + FADE_TIME);
+            this._fadeGainTo(0, now);
             setTimeout(() => {
-                if (this.oscillator) {
-                    this.oscillator.stop();
-                    this.oscillator.disconnect();
-                    this.gainNode.disconnect();
-                    this.oscillator = null;
-                    this.gainNode = null;
-                }
+                this._cleanupAudio();
             }, FADE_TIME * 1000 + 5);
         } else if (this.oscillator) {
             this.oscillator.stop();
@@ -81,17 +70,33 @@ class AudioManager {
     }
     async playSound(frequency, duration) {
         await this.startSound(frequency);
-        clearTimeout(this.soundTimer);
-        this.soundTimer = setTimeout(() => {
-            this.stopSound();
-        }, duration);
-        clearTimeout(this.continueTimer);
+        this._clearTimers();
+        this.soundTimer = setTimeout(() => this.stopSound(), duration);
         this.continueTimer = setTimeout(() => {
             if (!this.oscillator && !this.gainNode) {
                 console.log("Continuing sound...");
                 this.playSound(1, 1);
             }
         }, 10000);
+    }
+
+    _fadeGainTo(value, now) {
+        this.gainNode.gain.cancelScheduledValues(now);
+        this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, now);
+        this.gainNode.gain.linearRampToValueAtTime(value, now + FADE_TIME);
+    }
+    _cleanupAudio() {
+        if (this.oscillator) {
+            this.oscillator.stop();
+            this.oscillator.disconnect();
+            this.gainNode.disconnect();
+            this.oscillator = null;
+            this.gainNode = null;
+        }
+    }
+    _clearTimers() {
+        clearTimeout(this.soundTimer);
+        clearTimeout(this.continueTimer);
     }
 }
 
